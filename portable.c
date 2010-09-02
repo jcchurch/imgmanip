@@ -1,14 +1,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "imgio.h"
 #include "portable.h"
-
-void freeImage(struct portImage *pi) {
-    free(pi->f);
-    if (pi->c) free(pi->c);
-    if (pi->p) free(pi->p);
-    free(pi);
-}
 
 int compare (const void * a, const void * b) {
     double d = (*(struct pair*)a).v - (*(struct pair*)b).v;
@@ -20,52 +14,6 @@ int compare (const void * a, const void * b) {
     return 0;
 }
 
-
-double logMag(Complex p) {
-    return log10( sqrt( p.real * p.real + p.imag * p.imag ) );
-}
-
-struct portImage* copyImage(struct portImage *pi) {
-    int i;
-    struct portImage *pc;
-    pc = (struct portImage*)malloc(sizeof(struct portImage));
-    if (!pc) {
-        fprintf(stderr, "ERROR: memeory allocation failed for copying.\n");
-        return pc;
-    }
-
-    pc->height = pi->height;
-    pc->width  = pi->width;
-    pc->size   = pi->size;
-    pc->scale  = pi->scale;
-    pc->color  = pi->color;
-    pc->type   = pi->type;
-
-    if (pi->f) {
-        pc->f = (unsigned char*)malloc( pi->size * sizeof(unsigned char) );
-        if (!pc->f) {
-            fprintf(stderr, "ERROR: memory allocation failed for copying.\n");
-            return pc;
-        }
-
-        for (i = 0; i < pi->size; i++)
-            pc->f[i] = pi->f[i];
-    }
-
-    if (pi->c) {
-        pc->c = (Complex*)malloc( pi->size * sizeof(Complex) );
-        if (!pc->f) {
-            fprintf(stderr, "ERROR: memory allocation failed for copying.\n");
-            return pc;
-        }
-
-        for (i = 0; i < pi->size; i++)
-            pc->c[i] = pi->c[i];
-    }
-
-    return pc;
-}
-
 void thresholdImage(struct portImage *pi) {
     int half = pi->scale >> 1;
     int i;
@@ -74,117 +22,6 @@ void thresholdImage(struct portImage *pi) {
             pi->f[i] = pi->scale;
         else
             pi->f[i] = 0;
-}
-
-void minkowskiDivision(struct portImage *pi_n, struct portImage *pi_d) {
-    int i;
-
-    if (pi_n->color == 1)
-        return;
-
-    for (i = 0; i < pi_n->size; i++)
-        if (pi_n->f[i] != pi_d->f[i])
-            pi_n->f[i] = pi_n->scale;
-        else
-            pi_n->f[i] = 0;
-}
-
-void minkowskiAddition(struct portImage *pi, int maskwidth, int maskheight) {
-
-    int i,j,k,l;
-    unsigned char *b;
-    int maskheight_half = maskheight >> 1;
-    int maskwidth_half  = maskwidth >> 1;
-
-    if (pi->color == 1)
-        return;
-
-    b = (unsigned char*)malloc( sizeof(unsigned char) * pi->size );
-    if (!b) {
-        fprintf(stderr, "ERROR: failed to allocate memory for minkowski operation.\n");
-        return;
-    }
-
-    for (j = 0; j < pi->height; j++)
-        for (i = 0; i < pi->width; i++)
-            b[j * pi->width + i] = 0;
-
-    for (j = maskheight_half; j < pi->height - maskheight_half; j++) {
-        for (i = maskwidth_half; i < pi->width - maskwidth_half; i++) {
-            int any = 0;
-            for (k = j - maskheight_half; k <= j + maskheight_half; k++) {
-                for (l = i - maskwidth_half; l <= i + maskwidth_half; l++) {
-                    if (pi->f[k * pi->width + l] == pi->scale) {
-                        any = 1;
-                        break;
-                    }
-                }
-            }
-
-            if (any == 1) {
-                b[j * pi->width + i] = pi->scale;
-            }
-        }
-    }
-
-    for (i = 0; i < pi->size; i++)
-        pi->f[i] = b[i];
-
-    free(b);
-}
-
-void minkowskiSubtraction(struct portImage *pi, int maskwidth, int maskheight) {
-
-    int i,j,k,l;
-    unsigned char *b;
-    int maskheight_half = maskheight >> 1;
-    int maskwidth_half  = maskwidth >> 1;
-
-    if (pi->color == 1)
-        return;
-
-    b = (unsigned char*)malloc( sizeof(unsigned char) * pi->size );
-    if (!b) {
-        fprintf(stderr, "ERROR: failed to allocate memory for minkowski operation.\n");
-        return;
-    }
-
-    for (j = 0; j < pi->height; j++)
-        for (i = 0; i < pi->width; i++)
-            b[j * pi->width + i] = 0;
-
-    for (j = maskheight_half; j < pi->height - maskheight_half; j++) {
-        for (i = maskwidth_half; i < pi->width - maskwidth_half; i++) {
-            int all = 1;
-            for (k = j - maskheight_half; k <= j + maskheight_half; k++) {
-                for (l = i - maskwidth_half; l <= i + maskwidth_half; l++) {
-                    if (pi->f[k * pi->width + l] != pi->scale) {
-                        all = 0;
-                        break;
-                    }
-                }
-            }
-
-            if (all == 1) {
-                b[j * pi->width + i] = pi->scale;
-            }
-        }
-    }
-
-    for (i = 0; i < pi->size; i++)
-        pi->f[i] = b[i];
-
-    free(b);
-}
-
-void minkowskiOpening(struct portImage *pi, int maskwidth, int maskheight) {
-    minkowskiSubtraction(pi, maskwidth, maskheight);
-    minkowskiAddition(pi, maskwidth, maskheight);
-}
-
-void minkowskiClosing(struct portImage *pi, int maskwidth, int maskheight) {
-    minkowskiAddition(pi, maskwidth, maskheight);
-    minkowskiSubtraction(pi, maskwidth, maskheight);
 }
 
 double vectorMag(struct vector *v) {
@@ -221,282 +58,6 @@ void insertionSort(struct pair *a, int length, double value, int p, int q) {
         i--;
     }
     a[i+1]=x;
-}
-
-void FFT2D(struct portImage *pi) {
-    int i, j;
-    Complex *buffer;
-
-    /* If already computed, don't recompute. */
-    if (pi->c)
-        return;
-
-    /* Works only for greyscale images for now */
-    if (pi->color)
-        return;
-
-    pi->c  = (Complex*) malloc( sizeof(Complex) * pi->size   );
-    buffer = (Complex*) malloc( sizeof(Complex) * pi->height );
-
-    if (!(pi->c) || !buffer) {
-        fprintf(stderr, "ERROR: memory allocation for Complex buffer failed.");
-        return;
-    }
-
-    /* Transfer image to complex datatype */
-    for (i = 0; i < pi->size; i++) {
-        pi->c[i].real = (double) pi->f[i];
-        pi->c[i].imag = 0.0;
-    }
-
-    /* Compute the FFT for each row */
-    for (i = 0; i < pi->height; i++) {
-        
-        FFT(&pi->c[i * pi->width], pi->width); /*Uncomment */
-    }
-
-    /* Compute the FFT for each column */
-    for (i = 0; i < pi->width; i++) {
-        for (j = 0; j < pi->height; j++)
-            buffer[j] = pi->c[j * pi->width + i];
-
-        FFT(buffer, pi->width); /*Uncomment */
-
-        for (j = 0; j < pi->height; j++)
-            pi->c[j * pi->width + i] = buffer[j];
-    }
-
-    free(buffer);
-}
-
-void IFFT2D(struct portImage *pi) {
-    int i, j;
-    Complex *buffer;
-
-    /* If original not computed, don't compute */
-    if (pi->c == 0)
-        return;
-
-    /* Works only for greyscale images for now */
-    if (pi->color)
-        return;
-
-    buffer = (Complex*) malloc( sizeof(Complex) * pi->height );
-
-    if (!buffer) {
-        fprintf(stderr, "ERROR: memory allocation for Complex buffer failed.");
-        return;
-    }
-
-    /* Compute the FFT for each row */
-    for (i = 0; i < pi->height; i++)
-        IFFT(&pi->c[i * pi->width], pi->width); /*Uncomment */
-
-    /* Compute the FFT for each column */
-    for (i = 0; i < pi->width; i++) {
-        for (j = 0; j < pi->height; j++)
-            buffer[j] = pi->c[j * pi->width + i];
-
-        IFFT(buffer, pi->width); /*Uncomment */
-
-        for (j = 0; j < pi->height; j++)
-            pi->c[j * pi->width + i] = buffer[j];
-    }
-
-    for (i = 0; i < pi->size; i++)
-        pi->f[i] = (unsigned char)pi->c[i].real;
-
-    free(buffer);
-}
-
-void writeImage(struct portImage *pi, FILE* out) {
-    int i, j;
-    int w = pi->width;
-
-    if (pi->color)
-        w *= 3;
-
-    /* Header: */
-    fprintf(out, "P%d\n#\n%d %d\n%d\n", pi->type, pi->width, pi->height, pi->scale);
-
-    /* ASCII Format */
-    if (pi->type == 1 || pi->type == 2 || pi->type == 3)
-        for (i = 0; i < pi->height; i++) {
-            for (j = 0; j < w; j++)
-                fprintf(out, "%3d ", pi->f[i*w+j]);
-
-            fprintf(out, "\n");
-        }
-
-    /* Binary Format */
-    else
-        fwrite(pi->f, sizeof(unsigned char), pi->size, out);
-}
-
-void writeComplex(struct portImage *pi, FILE* out) {
-    int i, j, k=0;
-    int w = pi->width;
-    double point;
-    double max;
-    double scale;
-    double *buffer;
-
-    if (pi->c == 0) {
-        fprintf(stderr, "No complex values to print.\n");
-        return;
-    }
-
-    if (pi->color)
-        w *= 3;
-
-    buffer = (double*)malloc( sizeof(double) * pi->size );
-
-    if (!buffer) {
-        fprintf(stderr, "Error: allocation of memory for Complex write failed.\n");
-        return;
-    }
-
-    max = logMag(pi->c[0]);
-    for (i = 1; i < pi->size; i++) { /* For each pixel. */
-        point = logMag(pi->c[i]);
-        if (point > max)
-            max = point;
-    }
-
-    scale = (double)pi->scale / (double)max;
-
-    for (i = pi->height / 2; i < pi->height; i++) {
-        for (j = pi->width / 2; j < pi->width; j++)
-            buffer[k++] = scale * logMag(pi->c[i*w+j]);
-        for (j = 0; j < pi->width / 2; j++)
-            buffer[k++] = scale * logMag(pi->c[i*w+j]);
-    }
-
-    for (i = 0; i < pi->height / 2; i++) {
-        for (j = pi->width / 2; j < pi->width; j++)
-            buffer[k++] = scale * logMag(pi->c[i*w+j]);
-        for (j = 0; j < pi->width / 2; j++)
-            buffer[k++] = scale * logMag(pi->c[i*w+j]);
-    }
-
-    /* Header: */
-    fprintf(out, "P%d\n#\n%d %d\n%d\n", pi->type, pi->width, pi->height, pi->scale);
-
-    /* ASCII Format */
-    if (pi->type == 1 || pi->type == 2 || pi->type == 3)
-        for (i = 0; i < pi->height; i++) {
-            for (j = 0; j < w; j++)
-                fprintf(out, "%3d ", (unsigned char)buffer[i*w+j]);
-
-            fprintf(out, "\n");
-        }
-
-    /* Binary Format */
-    else
-        for (i = 0; i < pi->size; i++) {
-            unsigned char x = (unsigned char) buffer[i];
-            fwrite(&x, sizeof(unsigned char), 1, out);
-        }
-
-    free(buffer);
-}
-
-void graph_fftlogplot(struct portImage *pi, char *filename) {
-    FILE *out;
-
-    struct portImage fftlogplot_out;
-
-    if (pi->color)
-        return;
-
-    out = fopen(filename, "w");
-    if (out == 0) {
-        fprintf(stderr, "ERROR: Failed to open %s for writing histogram.\n", filename);
-        exit(1);
-    }
-
-    fftlogplot_out.height = pi->height;
-    fftlogplot_out.width  = pi->width;
-    fftlogplot_out.scale  = 1;
-    fftlogplot_out.color  = 0;
-    fftlogplot_out.type   = 2;
-    fftlogplot_out.c      = 0;
-
-    fftlogplot_out.f = (unsigned char*)malloc(sizeof(unsigned char) * pi->size);
-    if (fftlogplot_out.f == 0) {
-        fprintf(stderr, "ERROR: Memory for memory allocation of fftlogplot failed.\n");
-        return;
-    }
-
-    FFT2D(pi);
-    writeComplex(pi, out);
-
-    if (pi->c == 0) {
-        fprintf(stderr, "FFT Failed.\n");
-        return;
-    }
-
-    fclose(out);
-    free(fftlogplot_out.f);
-}
-
-void lowpass(struct portImage *pi, double percent) {
-    int i, j;
-    int pass_width  = (int)(percent * 0.5 * (double)pi->width);
-    int pass_height = (int)(percent * 0.5 * (double)pi->height);
-
-    if (pi->color)
-        return;
-
-    for (i = 0; i < pi->height; i++)
-        for (j = 0; j < pi->width; j++)
-            if ( (i >= pass_height && (pi->height - i) >= pass_height) ||
-                 (j >= pass_width  && (pi->width  - j) >= pass_width ) ) {
-                 pi->c[i * pi->width + j].real = 0.0;
-                 pi->c[i * pi->width + j].imag = 0.0;
-            }
-
-}
-
-void highpass(struct portImage *pi, double percent) {
-    int i, j;
-    int pass_width  = (int)(percent * 0.5 * (double)pi->width);
-    int pass_height = (int)(percent * 0.5 * (double)pi->height);
-    int half_width  = pi->width >> 1;
-    int half_height = pi->height >> 1;
-
-    if (pi->color)
-        return;
-
-    for (i = 0; i < pi->height; i++)
-        for (j = 0; j < pi->width; j++)
-            if ( (i <= (half_height-pass_height) ||  i >= (half_height+pass_height)) ||
-                 (j <= (half_width -pass_width ) ||  j >= (half_width +pass_width)) ) {
-                 pi->c[i * pi->width + j].real = 0.0;
-                 pi->c[i * pi->width + j].imag = 0.0;
-            }
-
-}
-
-double fftSimilarity(struct portImage *pa, struct portImage *pb, double percent) {
-
-    FFT2D(pa);
-    FFT2D(pb);
-
-    highpass(pa, percent);
-    highpass(pb, percent);
-    /*
-    lowpass(pa, percent);
-    lowpass(pb, percent);
-    */
-
-    int i;
-    double accumulator = 0.0;
-    for (i = 0; i < pa->size; i++) {
-        accumulator += (pa->c[i].real - pb->c[i].real)*(pa->c[i].real - pb->c[i].real);
-    }
-
-    return accumulator / (double) pa->size;
 }
 
 /** RGBtoHSV
@@ -611,7 +172,7 @@ void RGB(struct portImage *pi) {
     int pixels = pi->width * pi->height;
     struct rgb c;
 
-    if (pi->color != 1)
+    if (pi->color != csHSV)
         return;
 
     if (!pi->p)
@@ -630,7 +191,7 @@ void HSV(struct portImage *pi) {
     int pixels = pi->width * pi->height;
     struct rgb c;
 
-    if (pi->color != 1)
+    if (pi->color != csRGB)
         return;
 
     if (!pi->p) {
@@ -670,7 +231,7 @@ void simpleMeanFilter(struct portImage *pi, int window) {
     int            bound = window >> 1;
     int            index_pixel, index_pixel_window;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)malloc( window_screen * sizeof(struct pair) );
@@ -681,7 +242,7 @@ void simpleMeanFilter(struct portImage *pi, int window) {
         return;
     }
 
-    if (pi->color == 0) {
+    if (pi->color == csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
                 if (j < bound || j+bound >= pi->height || i < bound || i+bound >= pi->width)
@@ -748,7 +309,7 @@ void vectorOrderStatistic(struct portImage *pi, int window, int value) {
     if (value >= window_screen)
         value = window_screen - 1;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)         malloc(window_screen * sizeof(struct pair));
@@ -760,7 +321,7 @@ void vectorOrderStatistic(struct portImage *pi, int window, int value) {
         return;
     }
 
-    if (pi->color == 0) {
+    if (pi->color == csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
                 if (j < bound || j+bound >= pi->height || i < bound || i+bound >= pi->width)
@@ -822,7 +383,7 @@ int imageDifferentPixels(struct portImage *pa, struct portImage *pb) {
     if (pa->color != pb->color && pa->height != pb->height && pa->width != pb->width)
         return -1;
 
-    if (pa->color) {
+    if (pa->color != csGREYSCALE) {
         for (i = 0; i < pa->height * pa->width; i++)
             if (pa->f[i*3+0] != pb->f[i*3+0] || pa->f[i*3+1] != pb->f[i*3+1] || pa->f[i*3+2] != pb->f[i*3+2])
                 count++;
@@ -842,7 +403,7 @@ double imageAverageError(struct portImage *pa, struct portImage *pb) {
     if (pa->color != pb->color && pa->height != pb->height && pa->width != pb->width)
         return -1.0;
 
-    if (pa->color) {
+    if (pa->color != csGREYSCALE) {
         for (i = 0; i < pa->size; i+=3) {
             score += sqrt((pa->f[i+0]-pb->f[i+0])*(pa->f[i+0]-pb->f[i+0])+
                           (pa->f[i+1]-pb->f[i+1])*(pa->f[i+1]-pb->f[i+1])+
@@ -864,7 +425,7 @@ double imageCompare(struct portImage *pa, struct portImage *pb) {
     if (pa->color != pb->color && pa->height != pb->height && pa->width != pb->width)
         return -1.0;
 
-    if (pa->color) {
+    if (pa->color != csGREYSCALE) {
         for (i = 0; i < pa->size; i+=3) {
             score += ((pa->f[i+0]-pb->f[i+0])*(pa->f[i+0]-pb->f[i+0])+
                       (pa->f[i+1]-pb->f[i+1])*(pa->f[i+1]-pb->f[i+1])+
@@ -888,7 +449,7 @@ void componentOrderStatistic(struct portImage *pi, int window, int value) {
     int            bound = window >> 1;
     struct pair          *neighbors;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)malloc(window * window * sizeof(struct pair));
@@ -899,7 +460,7 @@ void componentOrderStatistic(struct portImage *pi, int window, int value) {
         return;
     }
 
-    if (pi->color == 1) {
+    if (pi->color != csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
                 point = j*w+(i*3);
@@ -987,7 +548,7 @@ void vectorMedianOrderStatistic(struct portImage *pi, int window, int m, int rep
     int            window_screen = window*window;
     int            bound = window >> 1;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)malloc(window_screen * sizeof(struct pair));
@@ -998,7 +559,7 @@ void vectorMedianOrderStatistic(struct portImage *pi, int window, int m, int rep
         return;
     }
 
-    if (pi->color == 1) {
+    if (pi->color != csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
 
@@ -1058,7 +619,7 @@ void HSV_ValueFilter(struct portImage *pi, int window) {
     int            bound = window >> 1;
     struct pair   *neighbors;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     HSV(pi);
@@ -1071,7 +632,7 @@ void HSV_ValueFilter(struct portImage *pi, int window) {
         return;
     }
 
-    if (pi->color == 1) {
+    if (pi->color != csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
                 point = j*w+(i*3);
@@ -1212,7 +773,7 @@ void vectorSpacialOrderStatistic(struct portImage *pi, int window, int m, int re
     struct pair          *neighbors;
     int            window_screen = window*window;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     if (m >= window_screen) {
@@ -1226,7 +787,7 @@ void vectorSpacialOrderStatistic(struct portImage *pi, int window, int m, int re
         return;
     }
 
-    if (pi->color == 1) {
+    if (pi->color != csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
 
@@ -1362,7 +923,7 @@ double calculatePotentialRMSE_mean(struct portImage *pi, struct portImage *noise
     int            index_pixel, index_pixel_window;
     double         score = 0.0;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)malloc( window_screen * sizeof(struct pair) );
@@ -1412,11 +973,11 @@ double calculatePotentialRMSE_smf(struct portImage *pi, struct portImage *noise,
     int            value = window_screen >> 1;
     double         score;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
-    neighbors = (struct pair*)         malloc(window_screen * sizeof(struct pair));
-    v         = (struct vector*)       malloc(pi->height * pi->width * sizeof(struct vector));
+    neighbors = (struct pair*)   malloc(window_screen * sizeof(struct pair));
+    v         = (struct vector*) malloc(pi->height * pi->width * sizeof(struct vector));
 
     if (!v || !neighbors) {
         fprintf(stderr, "ERROR: Cannot allocate memory for median filter.\n");
@@ -1464,7 +1025,7 @@ double calculatePotentialRMSE_cmf(struct portImage *pi, struct portImage *noise,
     double         score = 0;
     int            index;
 
-    if (pi->color == 1)
+    if (pi->color != csGREYSCALE)
         w *= 3;
 
     neighbors = (struct pair*)malloc(window_screen * sizeof(struct pair));
@@ -1474,7 +1035,7 @@ double calculatePotentialRMSE_cmf(struct portImage *pi, struct portImage *noise,
         return;
     }
 
-    if (pi->color == 1) {
+    if (pi->color != csGREYSCALE) {
         for (j = 0; j < pi->height; j++) {
             for (i = 0; i < pi->width; i++) {
                 if (j >= bound && j+bound < pi->height && i >= bound && i+bound < pi->width) {
@@ -1677,7 +1238,7 @@ void spacial_reduce(struct portImage *pi, int resWidth, int resHeigth) {
     int reduce_h = pi->height / resWidth;
     int reduce_w = pi->width  / resHeigth;
     int w    = pi->width;
-    if (pi->color) {
+    if (pi->color == csRGB) {
         int i, j, x, y, average_red, average_green, average_blue;
         w *= 3;
 
@@ -1708,7 +1269,7 @@ void spacial_reduce(struct portImage *pi, int resWidth, int resHeigth) {
         }
 
     }
-    else {
+    else if (pi->color == csGREYSCALE) {
         int i, j, x, y, average = 0;
         for (j = 0; j < pi->height; j += reduce_h) {
             for (i = 0; i < w; i += reduce_w) {
@@ -1728,58 +1289,9 @@ void spacial_reduce(struct portImage *pi, int resWidth, int resHeigth) {
     }
 }
 
-struct portImage* readImage(FILE* fid) {
-    char line[MAX_LINE+1];
-    char p;
-    int loop;
-    int i;
-
-    struct portImage *pi = (struct portImage*)malloc(sizeof(struct portImage));
-
-    fgets(line, MAX_LINE, fid);
-    sscanf(line, "%c%d", &p, &(pi->type) );
-
-    loop = 1;
-    while (loop == 1) {
-        fgets(line, MAX_LINE, fid); /* Should be the comment line, but not always */
-
-        if (line[0] != '#') {
-            break;
-        }
-    }
-
-    sscanf(line, "%d %d", &(pi->width), &(pi->height));
-    fgets(line, MAX_LINE, fid);
-    sscanf(line, "%d", &(pi->scale));
-
-    pi->size = pi->width * pi->height;
-
-    if (pi->type == 3 || pi->type == 6) {
-        pi->color = 1;
-        pi->size *= 3;
-    }
-    else
-        pi->color = 0;
-
-    pi->c = 0; /* This is the complex image buffer */
-    pi->p = 0; /* This is the HSV image buffer */
-    pi->f = (unsigned char*)malloc(pi->size * sizeof(unsigned char));
-
-    /* ASCII Format */
-    if (pi->type == 1 || pi->type == 2 || pi->type == 3)
-        for (i = 0; i < pi->size; i++)
-            fscanf(fid, "%d", &(pi->f[i]));
-
-    /* Binary Format */
-    else
-        fread(pi->f, sizeof(char), pi->size, fid);
-
-    return pi;
-}
-
 void histogram(struct portImage *pi, int *hist) {
     int i;
-    if (pi->color)
+    if (pi->color != csGREYSCALE)
         return;
 
     for (i = 0; i <= pi->scale; i++)
@@ -1811,7 +1323,7 @@ void graph_histogram(struct portImage *pi, char *filename) {
     histogram_out.height = width;
     histogram_out.width  = width;
     histogram_out.scale  = 1;
-    histogram_out.color  = 0;
+    histogram_out.color  = csGREYSCALE;
     histogram_out.type   = 2;
     histogram_out.c      = 0;
 
@@ -1865,7 +1377,7 @@ void graph_cdf(struct portImage *pi, char *filename) {
     cdf_out.height = width;
     cdf_out.width  = width;
     cdf_out.scale  = 1;
-    cdf_out.color  = 0;
+    cdf_out.color  = csGREYSCALE;
     cdf_out.type   = 2;
     cdf_out.c      = 0;
 
@@ -1928,7 +1440,7 @@ void equalize(struct portImage *pi) {
         return;
     }
 
-    if (pi->color == 0) {
+    if (pi->color == csGREYSCALE) {
         histogram(pi, hist);
         cumulative_distribution(pi->scale+1, hist, cdf);
 

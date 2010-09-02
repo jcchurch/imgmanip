@@ -4,17 +4,18 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "imgtypes.h"
 #include "FFT.h"
 
-static void FFT_process(Complex *x, int n, int sign)
+static void FFT_process(struct Complex *x, int n, int sign)
 {
-   Complex *w, u, temp, tm, *xi, *xip, *xj, *wptr;
+   struct Complex u, temp, tm, *w, *xi, *xip, *xj, *wptr;
    int i, j, k, l, le, m, windex = 1;
    double arg, w_real, w_imag, wrecur_real, wrecur_imag, wtemp_real;
 
    for (m = 0; (1 << m) < n; m++);
    le = n / 2;
-   w = calloc(le - 1, sizeof(Complex));
+   w = calloc(le - 1, sizeof(struct Complex));
 
    arg = 4.0 * atan(1.0) / le;
    wrecur_real = w_real = cos(arg);
@@ -82,12 +83,12 @@ static void FFT_process(Complex *x, int n, int sign)
    }
 }
 
-void FFT(Complex *x, int n)
+void FFT(struct Complex *x, int n)
 {
    FFT_process(x, n, -1);
 }
 
-void IFFT(Complex *x, int n)
+void IFFT(struct Complex *x, int n)
 {
    int i;
    FFT_process(x, n, 1);

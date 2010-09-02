@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "imgio.h"
+#include "minkowski.h"
+#include "FFT2D.h"
 #include "portable.h"
 
 #define FILENAME_LENGTH 100
