@@ -4,7 +4,10 @@
 #include "imgio.h"
 #include "minkowski.h"
 #include "FFT2D.h"
-#include "portable.h"
+#include "imgsimple.h"
+#include "imgfilter.h"
+#include "colorspace.h"
+#include "noise.h"
 
 #define FILENAME_LENGTH 100
 
@@ -376,7 +379,6 @@ int main(int argc, char **argv) {
     if (performEqualize)                     equalize(pi);
     if (performHistogram)                    graph_histogram(pi, histo_filename);
     if (performCDF)                          graph_cdf(pi, cdf_filename);
-    if (performEdgeDetectFour)               spacialEdgeDetect(pi, performEdgeDetectFour);
 
     if (performMinkowskiAddition)
         for (i = 0; i < maskrepeat; i++)

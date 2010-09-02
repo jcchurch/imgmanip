@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "imgio.h"
-#include "portable.h"
+#include "FFT2D.h"
+#include "imgfilter.h"
 
 #define FILENAME_LENGTH 100
 

@@ -61,11 +61,11 @@ struct portImage* readImage(FILE* fid) {
     pi->size = pi->width * pi->height;
 
     if (pi->type == 3 || pi->type == 6) {
-        pi->color = 1;
+        pi->color = csRGB;
         pi->size *= 3;
     }
     else
-        pi->color = 0;
+        pi->color = csGREYSCALE;
 
     pi->c = 0; /* This is the complex image buffer */
     pi->p = 0; /* This is the HSV image buffer */

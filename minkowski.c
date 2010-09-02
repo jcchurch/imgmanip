@@ -4,6 +4,16 @@
 #include "imgtypes.h"
 #include "minkowski.h"
 
+void thresholdImage(struct portImage *pi) {
+    int half = pi->scale >> 1;
+    int i;
+    for (i = 0; i < pi->size; i++)
+        if (pi->f[i] > half)
+            pi->f[i] = pi->scale;
+        else
+            pi->f[i] = 0;
+}
+
 void minkowskiDivision(struct portImage *pi_n, struct portImage *pi_d) {
     int i;
 
