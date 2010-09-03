@@ -1,5 +1,5 @@
-#ifndef __JAMES_IMAGE_FILTERS
-#define __JAMES_IMAGE_FILTERS
+#ifndef __IMGMANIP_IMAGE_FILTERS
+#define __IMGMANIP_IMAGE_FILTERS
 #include "imgtypes.h"
 
 int compare (const void * a, const void * b);

@@ -1,5 +1,5 @@
-#ifndef __JAMES_IMAGE_IO
-#define __JAMES_IMAGE_IO
+#ifndef __IMGMANIP_IMAGE_IO
+#define __IMGMANIP_IMAGE_IO
 #include "imgtypes.h"
 
 void freeImage(struct portImage *pi);

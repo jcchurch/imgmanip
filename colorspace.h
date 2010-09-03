@@ -1,7 +1,6 @@
-#ifndef __JAMES_COLORSPACE
-#define __JAMES_COLORSPACE
+#ifndef __IMGMANIP_COLORSPACE
+#define __IMGMANIP_COLORSPACE
 #include "imgtypes.h"
-#include "colorspace.h"
 
 struct hsv RGBtoHSV(struct rgb p);
 struct rgb HSVtoRGB(struct hsv x);

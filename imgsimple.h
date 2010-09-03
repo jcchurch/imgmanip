@@ -1,5 +1,5 @@
-#ifndef __JAMES__IMAGE_SIMPLE
-#define __JAMES__IMAGE_SIMPLE
+#ifndef __IMGMANIP_IMAGE_SIMPLE
+#define __IMGMANIP_IMAGE_SIMPLE
 #include "imgtypes.h"
 
 void scale_reduce(struct portImage *pi, int newscale);

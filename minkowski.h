@@ -1,5 +1,5 @@
-#ifndef __JAMES_MINKOWSKI
-#define __JAMES_MINKOWSKI
+#ifndef __IMGMANIP_MINKOWSKI
+#define __IMGMANIP_MINKOWSKI
 #include "imgtypes.h"
 
 void thresholdImage(struct portImage *pi);

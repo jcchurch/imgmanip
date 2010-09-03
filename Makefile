@@ -5,12 +5,12 @@ CFLAGS = -O2
 MATH   = -lm
 OUT    = ~/bin
 
-LIBRARIES = portable.o FFT.c
+LIBRARIES = imgio.o FFT.o FFT2D.o minkowski.o colorspace.o noise.o imgfilter.o imgsimple.o
 
-all: manip imgCmp
+all: imgmanip imgCmp
 
-.c.o:
-	$(CC) $(CFLAGS) -c $<
+%.o: $*.c $*.h
+	$(CC) $(CFLAGS) -c $*.c
 
 imgCmp: $(LIBRARIES)
 	$(CC) $(CFLAGS) $(MATH) $(LIBRARIES) imgCmp.c -o imgCmp
@@ -19,9 +19,10 @@ manip: $(LIBRARIES)
 	$(CC) $(CFLAGS) $(MATH) $(LIBRARIES) manip.c -o manip
 
 install: manip imgCmp
-	$(CP) manip $(OUT)/manip
+	$(CP) imgmanip $(OUT)/imgmanip
 	$(CP) imgCmp $(OUT)/imgCmp
 
 clean:
-	$(RM) *.o
-	$(RM) manip
+	-$(RM) *.o
+	-$(RM) imgmanip
+	-$(RM) imgCmp

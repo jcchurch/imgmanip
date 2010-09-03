@@ -1,5 +1,5 @@
-#ifndef __JAMES_IMAGE_TYPES
-#define __JAMES_IMAGE_TYPES
+#ifndef __IMGMANIP_IMAGE_TYPES
+#define __IMGMANIP_IMAGE_TYPES
 
 #define MAX_LINE    100
 #define TWO_PI      6.28318531

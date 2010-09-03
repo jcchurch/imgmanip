@@ -1,5 +1,5 @@
-#ifndef __JAMES_NOISE
-#define __JAMES_NOISE
+#ifndef __IMGMANIP_NOISE
+#define __IMGMANIP_NOISE
 #include "imgtypes.h"
 
 double randDouble();

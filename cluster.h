@@ -1,5 +1,5 @@
-#ifndef __JAMES_CLUSTER
-#define __JAMES_CLUSTER
+#ifndef __IMGMANIP_CLUSTER
+#define __IMGMANIP_CLUSTER
 #include <stdlib.h>
 
 struct Node {

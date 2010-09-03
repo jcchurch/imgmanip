@@ -1,5 +1,5 @@
-#ifndef __JAMES_FFT2D
-#define __JAMES_FFT2D
+#ifndef __IMGMANIP_FFT2D
+#define __IMGMANIP_FFT2D
 #include "imgtypes.h"
 #include "FFT.h"
 
