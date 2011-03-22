@@ -15,10 +15,10 @@ all: imgmanip imgCmp
 imgCmp: $(LIBRARIES)
 	$(CC) $(CFLAGS) $(MATH) $(LIBRARIES) imgCmp.c -o imgCmp
 
-manip: $(LIBRARIES)
-	$(CC) $(CFLAGS) $(MATH) $(LIBRARIES) manip.c -o manip
+imgmanip: $(LIBRARIES)
+	$(CC) $(CFLAGS) $(MATH) $(LIBRARIES) imgmanip.c -o imgmanip
 
-install: manip imgCmp
+install: imgmanip imgCmp
 	$(CP) imgmanip $(OUT)/imgmanip
 	$(CP) imgCmp $(OUT)/imgCmp
 
