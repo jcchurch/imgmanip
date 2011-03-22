@@ -1,0 +1,26 @@
+imgmanip (lowercase) is a command line image manipulation tool
+written in C that was used for my master's thesis. There is a
+lot of undocumented code here and some day I'll finish it.
+
+The program only works on PCX image files. Boring, I know. I
+guess I should work on other file formates such as PNG
+GIF or JPEG in the future.
+
+There are two binary executables made by this project. First,
+there's imgmanip. It's the image manipulation tool. Second,
+there's imgCmp, which is short for "image comparison", which
+reports a difference measure between two images passed on
+the command line. The second program is probably out dated.
+
+To build the program:
+
+make
+
+To install the program:
+
+make install
+
+The installation directory is the "bin" folder of your
+home directory. If you don't like this, edit the Makefile
+so that the OUT macro is set to your desired installation
+point.
